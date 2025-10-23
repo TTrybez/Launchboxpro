@@ -1,0 +1,21 @@
+Server running on http://localhost:3000
+DB: Getting/creating session for device ID: d10a19aa-9e9b-47dd-8be8-365378386223
+DB: Checking for existing session
+DB: Getting/creating session for device ID: d10a19aa-9e9b-47dd-8be8-365378386223
+DB: Checking for existing session
+DEBUG: incoming= 1 currentState= main_menu
+DB: Getting/creating session for device ID: d10a19aa-9e9b-47dd-8be8-365378386223
+DB: Checking for existing session
+DEBUG: incoming= 1 currentState= ordering
+DB: Getting/creating session for device ID: d10a19aa-9e9b-47dd-8be8-365378386223
+DB: Checking for existing session
+DEBUG: incoming= 0 currentState= ordering
+DB: Getting/creating session for device ID: d10a19aa-9e9b-47dd-8be8-365378386223
+DB: Checking for existing session
+DEBUG: incoming= 99 currentState= main_menu
+DB: Getting/creating session for device ID: d10a19aa-9e9b-47dd-8be8-365378386223
+DB: Checking for existing session
+DEBUG: incoming= 1 currentState= checkout_options
+DB: Getting/creating session for device ID: d10a19aa-9e9b-47dd-8be8-365378386223
+DB: Checking for existing session
+DEBUG: incoming= 2025-10-24 23:58 currentState= scheduling

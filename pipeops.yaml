@@ -1,0 +1,50 @@
+# PipeOps Configuration
+version: 1.0
+
+# Application Info
+app:
+  name: restaurant-chatbot
+  type: nodejs
+  framework: express
+
+# Build Configuration
+build:
+  node_version: "18"
+  command: "npm ci --production"
+
+# Runtime Configuration
+runtime:
+  start_command: "node server.js"
+  port: 3000
+  env_variables:
+    - NODE_ENV
+    - PORT
+    - DATABASE_URL
+    - PAYSTACK_SECRET_KEY
+    - PAYSTACK_PUBLIC_KEY
+    - BASE_URL
+
+# Database Configuration
+database:
+  type: postgresql
+  version: "14"
+  name: restaurantchatbot
+
+# Health Check
+health_check:
+  path: /health
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+# Scaling
+scaling:
+  min_instances: 1
+  max_instances: 2
+  cpu_threshold: 80
+  memory_threshold: 80
+
+# Resource Limits
+resources:
+  cpu: "0.5"
+  memory: "512Mi"
