@@ -1,0 +1,57 @@
+services:services:
+
+  - type: web  - type: web
+
+    name: restaurant-chatbot    name: restaurant-chatbot
+
+    env: node    env: node
+
+    buildCommand: npm install    runtime: node
+
+    startCommand: node app.js    buildCommand: npm ci
+
+    envVars:    startCommand: npm start
+
+      - key: NODE_ENV    plan: free
+
+        value: production    region: oregon
+
+      - key: PORT    healthCheckPath: /health
+
+        value: 10000    healthCheckTimeout: 100
+
+      - key: DATABASE_URL    envVars:
+
+        fromDatabase:      - key: NODE_VERSION
+
+          name: restaurantchatbot-db        value: 18
+
+          property: connectionString      - key: NODE_ENV
+
+        value: production
+
+databases:      - key: PORT
+
+  - name: restaurantchatbot-db        value: 10000
+
+    plan: starter      - key: DATABASE_URL
+        fromDatabase:
+          name: restaurantchatbot-db
+          property: connectionString
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: restaurantchatbot-db
+          property: connectionString
+    autoDeploy: true
+
+databases:
+  - name: restaurantchatbot-db
+    engine: postgres
+    version: "14"
+    plan: starter
+    region: oregon
