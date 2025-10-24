@@ -14,7 +14,7 @@ build:
 
 # Runtime Configuration
 runtime:
-  start_command: "node server.js"   
+  start_command: "node app.js"   
   port: 3000
   env_variables:
     - NODE_ENV
