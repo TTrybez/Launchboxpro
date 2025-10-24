@@ -10,25 +10,22 @@ app:
 # Build Configuration
 build:
   node_version: "18"
-  command: "npm ci --production"
+  command: "npm ci --development"
 
 # Runtime Configuration
 runtime:
-  start_command: "node server.js"
+  start_command: "node server.js"   
   port: 3000
   env_variables:
     - NODE_ENV
     - PORT
-    - DATABASE_URL
+    - DATABASE_URL       
+    - SUPABASE_URL       
+    - SUPABASE_ANON_KEY  
+    - SUPABASE_SERVICE_KEY 
     - PAYSTACK_SECRET_KEY
     - PAYSTACK_PUBLIC_KEY
     - BASE_URL
-
-# Database Configuration
-database:
-  type: postgresql
-  version: "14"
-  name: restaurantchatbot
 
 # Health Check
 health_check:

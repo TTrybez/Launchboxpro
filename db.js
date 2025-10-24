@@ -1,4 +1,8 @@
 require('dotenv').config();
+
+const connectionString = process.env.DATABASE_URL
+const sql = postgres(connectionString)
+
 const { Pool } = require('pg');
 
 const pool = new Pool({

@@ -4,31 +4,27 @@ const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
 
-// =====================
+
 // Express App Setup
-// =====================
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// =====================
 // Database Connection
-// =====================
 const isLocal =
   !process.env.DATABASE_URL ||
   process.env.DATABASE_URL.includes('localhost') ||
   process.env.NODE_ENV === 'development';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres',
-  ssl: false,
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false
+    } && !isLocal,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
 
-// =====================
 // Database Initialization
-// =====================
 async function initializeDatabase() {
   console.log('Starting database initialization...');
   const client = await pool.connect();
@@ -136,17 +132,13 @@ async function initializeDatabase() {
   }
 }
 
-// =====================
 // Middleware
-// =====================
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// =====================
 // Routes
-// =====================
 const chatRoutes = require('./routes/chat');
 const paymentRoutes = require('./routes/payment');
 
@@ -171,9 +163,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// =====================
 // Error Handling
-// =====================
 app.use((err, req, res, next) => {
   console.error('Application error:', err);
   res.status(err.status || 500).json({
@@ -181,9 +171,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// =====================
 // Start Server
-// =====================
 async function startServer() {
   try {
     await initializeDatabase();
@@ -197,9 +185,7 @@ async function startServer() {
   }
 }
 
-// =====================
 // Global Error Handling
-// =====================
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
   process.exit(1);
@@ -210,7 +196,5 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-// =====================
 // Start Application
-// =====================
 startServer();
