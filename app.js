@@ -4,29 +4,40 @@ const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
 
-// Initialize express app
+// =====================
+// Express App Setup
+// =====================
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Database configuration with SSL for production
+// =====================
+// Database Connection
+// =====================
+const isLocal =
+  !process.env.DATABASE_URL ||
+  process.env.DATABASE_URL.includes('localhost') ||
+  process.env.NODE_ENV === 'development';
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres',
+  ssl: false,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
 
-// Database initialization function
+// =====================
+// Database Initialization
+// =====================
 async function initializeDatabase() {
   console.log('Starting database initialization...');
   const client = await pool.connect();
-  
-  try {
-    console.log('Connected to database. Creating tables...');
-    await client.query('BEGIN');
 
-    // Create sessions table
+  try {
+    await client.query('BEGIN');
+    console.log('Connected to database. Creating tables...');
+
+    // Sessions table
     await client.query(`
       CREATE TABLE IF NOT EXISTS sessions (
         id SERIAL PRIMARY KEY,
@@ -37,11 +48,11 @@ async function initializeDatabase() {
       )
     `);
 
-    // Create menu_items table
+    // Menu items
     await client.query(`
       CREATE TABLE IF NOT EXISTS menu_items (
         id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
+        name VARCHAR(255) UNIQUE NOT NULL,
         description TEXT,
         price DECIMAL(10, 2) NOT NULL,
         category VARCHAR(100),
@@ -50,7 +61,7 @@ async function initializeDatabase() {
       )
     `);
 
-    // Create current_orders table
+    // Current (cart) orders
     await client.query(`
       CREATE TABLE IF NOT EXISTS current_orders (
         id SERIAL PRIMARY KEY,
@@ -63,7 +74,7 @@ async function initializeDatabase() {
       )
     `);
 
-    // Create placed_orders table
+    // Placed (submitted) orders
     await client.query(`
       CREATE TABLE IF NOT EXISTS placed_orders (
         id SERIAL PRIMARY KEY,
@@ -78,7 +89,7 @@ async function initializeDatabase() {
       )
     `);
 
-    // Create order_items table
+    // Order items per order
     await client.query(`
       CREATE TABLE IF NOT EXISTS order_items (
         id SERIAL PRIMARY KEY,
@@ -90,21 +101,29 @@ async function initializeDatabase() {
       )
     `);
 
-    // Insert sample menu items
-    await client.query(`
-      INSERT INTO menu_items (name, description, price, category) VALUES
-      ('Jollof Rice', 'Delicious Nigerian Jollof rice with chicken', 2500.00, 'Main Course'),
-      ('Fried Rice', 'Tasty fried rice with vegetables and chicken', 2300.00, 'Main Course'),
-      ('Pounded Yam & Egusi', 'Fresh pounded yam with rich Egusi soup', 3000.00, 'Main Course'),
-      ('Pepper Soup', 'Spicy Nigerian pepper soup (Fish/Goat)', 1800.00, 'Soup'),
-      ('Grilled Chicken', 'Perfectly grilled chicken with spices', 3500.00, 'Protein'),
-      ('Beef Suya', 'Spicy grilled beef suya', 2000.00, 'Protein'),
-      ('Chapman', 'Refreshing Chapman drink', 800.00, 'Drinks'),
-      ('Zobo', 'Traditional Zobo drink', 500.00, 'Drinks'),
-      ('Moi Moi', 'Steamed bean pudding', 600.00, 'Sides'),
-      ('Plantain', 'Fried ripe plantain', 500.00, 'Sides')
-      ON CONFLICT DO NOTHING
-    `);
+    // Check existing menu count
+    const { rows } = await client.query('SELECT COUNT(*) FROM menu_items');
+    const count = parseInt(rows[0].count);
+
+    if (count === 0) {
+      console.log('Seeding initial menu items...');
+      await client.query(`
+        INSERT INTO menu_items (name, description, price, category) VALUES
+        ('Jollof Rice', 'Delicious Nigerian Jollof rice with chicken', 2500.00, 'Main Course'),
+        ('Fried Rice', 'Tasty fried rice with vegetables and chicken', 2300.00, 'Main Course'),
+        ('Pounded Yam & Egusi', 'Fresh pounded yam with rich Egusi soup', 3000.00, 'Main Course'),
+        ('Pepper Soup', 'Spicy Nigerian pepper soup (Fish/Goat)', 1800.00, 'Soup'),
+        ('Grilled Chicken', 'Perfectly grilled chicken with spices', 3500.00, 'Protein'),
+        ('Beef Suya', 'Spicy grilled beef suya', 2000.00, 'Protein'),
+        ('Chapman', 'Refreshing Chapman drink', 800.00, 'Drinks'),
+        ('Zobo', 'Traditional Zobo drink', 500.00, 'Drinks'),
+        ('Moi Moi', 'Steamed bean pudding', 600.00, 'Sides'),
+        ('Plantain', 'Fried ripe plantain', 500.00, 'Sides')
+      `);
+      console.log('✅ Menu seeded successfully!');
+    } else {
+      console.log(`✅ Menu already has ${count} items, skipping seeding.`);
+    }
 
     await client.query('COMMIT');
     console.log('Database initialization completed successfully!');
@@ -117,21 +136,24 @@ async function initializeDatabase() {
   }
 }
 
+// =====================
 // Middleware
+// =====================
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Load routes
+// =====================
+// Routes
+// =====================
 const chatRoutes = require('./routes/chat');
 const paymentRoutes = require('./routes/payment');
 
-// Routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/payment', paymentRoutes);
 
-// Health check endpoint
+// Health Check
 app.get('/health', async (req, res) => {
   try {
     const client = await pool.connect();
@@ -144,29 +166,30 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Serve index page
+// Serve homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Error handling middleware
+// =====================
+// Error Handling
+// =====================
 app.use((err, req, res, next) => {
   console.error('Application error:', err);
   res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message
+    error: process.env.NODE_ENV === 'production' ? 'Something went wrong!' : err.message,
   });
 });
 
-// Start server function
+// =====================
+// Start Server
+// =====================
 async function startServer() {
   try {
-    // Initialize database first
     await initializeDatabase();
-    
-    // Then start the server
     app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-      console.log('Environment:', process.env.NODE_ENV);
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log('Environment:', process.env.NODE_ENV || 'development');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
@@ -174,7 +197,9 @@ async function startServer() {
   }
 }
 
-// Handle uncaught errors
+// =====================
+// Global Error Handling
+// =====================
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
   process.exit(1);
@@ -185,5 +210,7 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-// Start the application
+// =====================
+// Start Application
+// =====================
 startServer();
